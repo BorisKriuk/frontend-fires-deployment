@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Народные Пожары</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+        }
+        .header {
+            background-color: #1e1e1e;
+            color: white;
+            padding: 20px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 1.2rem;
+            flex-grow: 1;
+            margin-left: 10px;
+        }
+        .fire-icon {
+            width: 36px;
+            height: 36px;
+            margin-left: 50px;
+        }
+        .menu-icon {
+            width: 37px;
+            height: 37px;
+            cursor: pointer;
+            margin-right: 40px;
+        }
+        .widget {
+            width: 100%;
+            max-width: 1282px;
+            height: 117px;
+            background: linear-gradient(to right, #720404, #000000);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 1.5rem;
+            border-radius: 10px;
+            margin: 30px auto;
+        }
+        .listing-widget-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 10px auto 40px;
+            max-width: 1282px;
+            width: 100%;
+            padding: 0 15px;
+            box-sizing: border-box;
+        }
+        .listing-widget {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            background-color: #e5e7eb;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .listing-widget img {
+            width: 24px;
+            height: 24px;
+            margin-right: 40px;
+        }
+        .widget-content {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        .base-text {
+            margin-right: 20px;
+        }
+        .location {
+            text-align: left;
+            margin-left: 340px;
+        }
+        .status {
+            color: red;
+            text-align: right;
+            margin-left: auto;
+            margin-right: 5px;
+        }
+        .status.medium {
+            color: orange;
+        }
+        .status.low, .status.none {
+            color: green;
+        }
+        footer {
+            background-color: #1e1e1e;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img class="fire-icon" src="./icons/fire-header.svg" alt="Fire Icon" />
+        <h1>народные-пожары.ру</h1>
+        <img class="menu-icon" src="./icons/ai.png" alt="Menu Icon" />
+    </div>
+
+    <div class="widget">
+        Риск появления возгораний на территории РФ- <span id="currentDate"></span>
+    </div>
+
+    <main class="listing-widget-container" id="listingContainer"></main>
+
+    <footer style="background-color: #1e1e1e; color: white; display: flex; padding: 20px; position: relative;">
+        <div style="margin-left: 115px; margin-right: 485px;">2025. All rights reserved. Version: 1.0</div>
+        <div>Автор проекта: Борис Крюк. Для связи: <a href="mailto:bkriuk04@yandex.ru" style="color: #FFA500;">bkriuk04@yandex.ru</a></div>
+    </footer>
+
+    <script>
+        function formatDate(date) {
+            const options = { day: 'numeric', month: 'long', year: 'numeric' };
+            return date.toLocaleDateString('ru-RU', options);
+        }
+
+        function updateDate() {
+            const currentDate = new Date();
+            document.getElementById('currentDate').textContent = formatDate(currentDate);
+        }
+
+        async function fetchData() {
+            try {
+                const response = await fetch('http://backend-weather-env.eba-kgkfrxaj.us-west-2.elasticbeanstalk.com/risk/', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    mode: 'cors',
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Data received:', data);
+                
+                const container = document.getElementById('listingContainer');
+                container.innerHTML = '';
+
+                for (const [region, status] of Object.entries(data)) {
+                    const widget = document.createElement('div');
+                    widget.className = 'listing-widget';
+                    
+                    const statusClass = status === 'Высокий' ? 'status' : 'status none';
+                    
+                    widget.innerHTML = `
+                        <img src="./icons/fire_main.svg" alt="Fire Icon">
+                        <div class="widget-content">
+                            <span class="base-text">Пожар/ Возгорание/ Пал</span>
+                            <span class="location">${region}</span>
+                        </div>
+                        <span class="${statusClass}">${status}</span>
+                    `;
+                    container.appendChild(widget);
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                const container = document.getElementById('listingContainer');
+                container.innerHTML = `<div class="listing-widget">
+                    <div class="widget-content">
+                        <div style="color: red;">Ошибка загрузки данных: ${error.message}</div>
+                    </div>
+                </div>`;
+            }
+        }
+
+        // Update date immediately
+        updateDate();
+
+        // Initial fetch and then every 5 seconds
+        fetchData();
+        setInterval(fetchData, 5000);
+
+        // Update date every minute
+        setInterval(updateDate, 60000);
+    </script>
+</body>
+</html>
